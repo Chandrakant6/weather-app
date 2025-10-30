@@ -14,6 +14,51 @@ from database import DB_NAME, init_db, execute_query, fetch_all
 app = FastAPI(title="Weather API", version="1.0")
 init_db()
 
+@app.get("/", summary="Welcome")
+def root():
+    return {
+        "message": "Welcome to the Weather App 🌦️",
+        "developer": "Chandrakant Turkar",
+        "description": (
+            "This app provides real-time weather information with full CRUD "
+            "functionality, location validation, CSV export, and map integration."
+        ),
+        "info_endpoint": "/info",
+        "docs": "/docs",
+        "company": {
+            "name": "Product Manager Accelerator",
+            "linkedin": "https://www.linkedin.com/school/pmaccelerator/"
+        }
+    }
+
+@app.get("/info", summary="App and Company Info")
+def info():
+    return {
+        "app_name": "Weather App",
+        "version": "1.0.0",
+        "developer": {
+            "name": "Chandrakant Turkar",
+            "role": "Python Developer Intern",
+            "github": "https://github.com/Chandrakant6",
+            "linkedin": "https://www.linkedin.com/in/chandrakant-turkar-86b2112a1"
+        },
+        "company": {
+            "name": "Product Manager Accelerator",
+            "linkedin": "https://www.linkedin.com/school/pmaccelerator/",
+            "description": (
+                "Product Manager Accelerator (PMA) is a global learning platform "
+                "for aspiring and professional product managers, helping them "
+                "build, launch, and scale real-world products."
+            )
+        },
+        "endpoints": {
+            "root": "/",
+            "weather": "/weather",
+            "docs": "/docs"
+        }
+    }
+
+
 def get_coordinates(city_name):
     geolocator = Nominatim(user_agent="weather_app")
     location = geolocator.geocode(city_name)
