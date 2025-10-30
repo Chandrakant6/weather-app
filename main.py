@@ -35,6 +35,19 @@ def get_weather(city_name):
     }
 
 
+def validate_location(location: str):
+    geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={location}"
+    try:
+        res = requests.get(geo_url, timeout=5)
+        res.raise_for_status()  # raise HTTPError for 4xx/5xx from API
+        data = res.json()
+    except requests.RequestException:
+        raise HTTPException(status_code=503, detail="Location service unavailable. Try again later.")
+
+    # Check if results exist
+    if "results" not in data or not data["results"]:
+        raise HTTPException(status_code=404, detail=f"Location '{location}' not found.")
+
 def validate_date_range(start_date: str, end_date: str):
     try:
         start = datetime.strptime(start_date, "%Y-%m-%d")
@@ -48,11 +61,14 @@ def validate_date_range(start_date: str, end_date: str):
 
     return True
 
+
 # CREATE
 @app.post("/weather")
 def create_weather(city: str = Query(...), start_date: str = Query(None), end_date: str = Query(None)):
 
-    validate_date_range(start_date, end_date)
+    validate_location(city)
+    if start_date and end_date:
+        validate_date_range(start_date, end_date)
 
     try:
         weather = get_weather(city)
