@@ -35,7 +35,8 @@ def get_weather(city_name):
         "longitude": lon,
         "temperature": weather["temperature"],
         "windspeed": weather["windspeed"],
-        "weathercode": weather["weathercode"]
+        "weathercode": weather["weathercode"],
+        "map_link" : f"https://www.openstreetmap.org/?mlat={lat}&mlon={lon}#map=10/{lat}/{lon}"
     }
 
 
