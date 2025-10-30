@@ -2,6 +2,8 @@ from fastapi import FastAPI, Query, HTTPException
 from geopy.geocoders import Nominatim
 import requests
 
+from datetime import datetime
+
 from database import init_db, execute_query, fetch_all
 
 
@@ -32,9 +34,26 @@ def get_weather(city_name):
         "weathercode": weather["weathercode"]
     }
 
+
+def validate_date_range(start_date: str, end_date: str):
+    try:
+        start = datetime.strptime(start_date, "%Y-%m-%d")
+        end = datetime.strptime(end_date, "%Y-%m-%d")
+    except ValueError:
+        # If the format is wrong, e.g. "2025-13-40"
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    if start > end:
+        raise HTTPException(status_code=400, detail="Start date cannot be after end date.")
+
+    return True
+
 # CREATE
 @app.post("/weather")
 def create_weather(city: str = Query(...), start_date: str = Query(None), end_date: str = Query(None)):
+
+    validate_date_range(start_date, end_date)
+
     try:
         weather = get_weather(city)
         execute_query(
