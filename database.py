@@ -13,7 +13,8 @@ def init_db():
             end_date TEXT,
             temperature REAL,
             windspeed REAL,
-            weathercode INTEGER
+            weathercode INTEGER,
+            map_link TEXT
         )
     ''')
     conn.commit()
