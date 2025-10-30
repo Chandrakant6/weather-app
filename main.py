@@ -1,5 +1,8 @@
-import requests
+from fastapi import FastAPI, Query, HTTPException
 from geopy.geocoders import Nominatim
+import requests
+
+app = FastAPI(title="Weather API", version="1.0")
 
 def get_coordinates(city_name):
     geolocator = Nominatim(user_agent="weather_app")
@@ -25,12 +28,13 @@ def get_weather(city_name):
         "weathercode": weather["weathercode"]
     }
 
-if __name__ == "__main__":
-    city = input("Enter city name: ")
+@app.get("/weather")
+def read_weather(city: str = Query(..., description="Enter city name")):
+    """
+    Fetch live weather data for a city using Open-Meteo API.
+    """
     try:
-        result = get_weather(city)
-        print("\n✅ Weather data fetched successfully:")
-        for key, value in result.items():
-            print(f"{key.capitalize()}: {value}")
+        data = get_weather(city)
+        return {"status": "success", "data": data}
     except Exception as e:
-        print(f"❌ Error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
