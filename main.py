@@ -100,8 +100,8 @@ def create_weather(city: str = Query(...), start_date: str = Query(None), end_da
     try:
         weather = get_weather(city)
         execute_query(
-            "INSERT INTO weather (city, start_date, end_date, temperature, windspeed, weathercode) VALUES (?, ?, ?, ?, ?, ?)",
-            (weather["city"], start_date, end_date, weather["temperature"], weather["windspeed"], weather["weathercode"])
+            "INSERT INTO weather (city, start_date, end_date, temperature, windspeed, weathercode, map_link) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (weather["city"], start_date, end_date, weather["temperature"], weather["windspeed"], weather["weathercode"], weather["map_link"])
         )
         return {"status": "success", "data": weather}
     except Exception as e:
@@ -120,6 +120,7 @@ def read_weather():
             "temperature": r[4],
             "windspeed": r[5],
             "weathercode": r[6],
+            "map_link" : r[7]
         }
         for r in rows
     ]
