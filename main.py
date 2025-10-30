@@ -2,7 +2,11 @@ from fastapi import FastAPI, Query, HTTPException
 from geopy.geocoders import Nominatim
 import requests
 
+from database import init_db, execute_query, fetch_all
+
+
 app = FastAPI(title="Weather API", version="1.0")
+init_db()
 
 def get_coordinates(city_name):
     geolocator = Nominatim(user_agent="weather_app")
@@ -28,13 +32,54 @@ def get_weather(city_name):
         "weathercode": weather["weathercode"]
     }
 
-@app.get("/weather")
-def read_weather(city: str = Query(..., description="Enter city name")):
-    """
-    Fetch live weather data for a city using Open-Meteo API.
-    """
+# CREATE
+@app.post("/weather")
+def create_weather(city: str = Query(...), start_date: str = Query(None), end_date: str = Query(None)):
     try:
-        data = get_weather(city)
-        return {"status": "success", "data": data}
+        weather = get_weather(city)
+        execute_query(
+            "INSERT INTO weather (city, start_date, end_date, temperature, windspeed, weathercode) VALUES (?, ?, ?, ?, ?, ?)",
+            (weather["city"], start_date, end_date, weather["temperature"], weather["windspeed"], weather["weathercode"])
+        )
+        return {"status": "success", "data": weather}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# READ
+@app.get("/weather")
+def read_weather():
+    rows = fetch_all("SELECT * FROM weather")
+    data = [
+        {
+            "id": r[0],
+            "city": r[1],
+            "start_date": r[2],
+            "end_date": r[3],
+            "temperature": r[4],
+            "windspeed": r[5],
+            "weathercode": r[6],
+        }
+        for r in rows
+    ]
+    return {"count": len(data), "data": data}
+
+# UPDATE
+@app.put("/weather/{id}")
+def update_weather(id: int, city: str = Query(None), temperature: float = Query(None)):
+    try:
+        if city:
+            execute_query("UPDATE weather SET city=? WHERE id=?", (city, id))
+        if temperature:
+            execute_query("UPDATE weather SET temperature=? WHERE id=?", (temperature, id))
+        return {"status": "success", "message": f"Record {id} updated."}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# DELETE
+@app.delete("/weather/{id}")
+def delete_weather(id: int):
+    try:
+        execute_query("DELETE FROM weather WHERE id=?", (id,))
+        return {"status": "success", "message": f"Record {id} deleted."}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
