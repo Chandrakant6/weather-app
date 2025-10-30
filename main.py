@@ -1,10 +1,14 @@
 from fastapi import FastAPI, Query, HTTPException
+from fastapi.responses import StreamingResponse
 from geopy.geocoders import Nominatim
 import requests
 
 from datetime import datetime
+import sqlite3
+import csv
+import io
 
-from database import init_db, execute_query, fetch_all
+from database import DB_NAME, init_db, execute_query, fetch_all
 
 
 app = FastAPI(title="Weather API", version="1.0")
@@ -60,6 +64,28 @@ def validate_date_range(start_date: str, end_date: str):
         raise HTTPException(status_code=400, detail="Start date cannot be after end date.")
 
     return True
+
+def export_weather_data():
+    """Exports all weather data from the database as a CSV stream."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM weather")
+    rows = cursor.fetchall()
+
+    # Get column names dynamically
+    col_names = [description[0] for description in cursor.description]
+
+    conn.close()
+
+    # Convert to CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(col_names)
+    writer.writerows(rows)
+    output.seek(0)
+
+    return output
 
 
 # CREATE
@@ -118,3 +144,13 @@ def delete_weather(id: int):
         return {"status": "success", "message": f"Record {id} deleted."}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# data export 
+@app.get("/export", tags=["Utilities"])
+def export_data():
+    output = export_weather_data()
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=weather_data.csv"}
+    )
